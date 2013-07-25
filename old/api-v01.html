@@ -1,0 +1,777 @@
+﻿<!DOCTYPE html> 
+<html> 
+	<header>
+		<title>Documentation de l'API</title>
+
+		<style>
+		.right-title {
+		border:none;
+		width:700px;
+		float:left;
+		text-align:justify;
+		}
+		.parameter {
+		border:none;
+		width:700px;
+		float:left;
+		text-align:left;
+		}		
+		.left-title {
+		border:none;
+		width:100px;
+		float:left;
+		text-algin:center;
+		}
+		.main-box {
+		border:none;
+		width:800px;
+		margin:auto;
+		padding:15px 0px 15px 0px;	
+		clear: both;
+		}
+		.main-title {
+		border:none;
+		width:800px;
+		margin:auto;		
+		}
+		.main-text {
+		border:none;
+		width:800px;
+		margin:auto;
+		text-align:justify;
+		}		
+		.variable {
+		font-weight:bold;
+		}
+		.parameter-name {
+		border:none;
+		width:100px;
+		float:left;
+		text-align:left;
+		}			
+		.parameter-type {
+		border:none;
+		width:100px;
+		float:left;
+		text-align:left;
+		}
+		.parameter-description {
+		border:none;
+		width:500px;
+		float:left;
+		text-align:left;
+		}	
+		.parameter-type {
+		font-style:italic;
+		text-align:center;
+		}
+		.parameter-name {
+		font-weight:bold;
+		}
+		h3{
+		margin:30px 0px 0px 0px;
+		}
+		</style>
+		<script src="../../api/blueimp-JavaScript-Templates/tmpl.min.js"></script>
+	</header>
+<body>
+	<div class="main-text">
+		<h1>
+			Documentation de l'api wagapi - version 0.1
+		</h1>
+	</div>	
+	<div class="main-text">
+		<h2>
+			Préambule
+		</h2>
+		<p>
+		Ce document a pour but de décrire l'utilisation de l'api permettant à des applications tierces d'interragir avec la plateforme de wagapi pour le stockage, le classement, la consultation et le partage de données.
+		</p>
+		<h3>
+			Prérequis
+		</h3>
+		<p>
+		L'utilisation de l'api requiert un clé d'accès à l'api, qui sera dénommée API_key ou simplement <span class="variable">key</span> dans les lignes qui suivent. Cette clé est fournie par les administrateurs de wagapi.
+		Il n'est pour l'instant pas possible d'obtenir une clé autrement qu'en adressant une demande écrite et motivée à l'adresse : <a href="contact@wagapi.com">contact@wagapi.com</a>
+		Par ailleurs il est indispensable de disposer d'au moins un compte chez wagapi. Les identifiants <span class="variable">user</span> correspondant au nom d'utilisateur du compte et <span class="variable">password</span> sont indispensables pour que l'application puisse s'authentifier et accéder au compte.
+		</p>
+		<h3>
+			Généralités et concepts
+		</h3>
+		<h4>
+			Authentification des échanges
+		</h4>
+		<p>		
+		L'authentification repose sur l'utilisation d'un jeton d'authentification, de l'identifiant de l'utilisateur, en l'occurence son identifiant API (ou API key) et de l'identifiant du compte auquel on accède. 
+		L'appel /access/account détaillé plus loin est une méthode simple permettant à une application tierce d'avoir accès à un compte, à partir du nomt d'utilisateur et du mot de passe du compte. 
+		La méthode renvoie en cas de succès le jeton, et l'identifiant du compte. Le jeton et l'identifiant API doivent ensuite être systématiquement insérés dans les appels :
+		</ul>
+			<li>soit dans les headers, associés respectivement aux en-têtes "auth_token" et "key"</li>
+			<li>soit dans les variables GET ou POST, selon la méthode utilisée, associés respectivement aux variables "auth_token" et "key"</li>
+		</ul>
+			L'identifiant du compte est systématiquement inséré dans les URI. Sa place est précisée dans le descriptif détaillé des appels sous la variable <span class="variable">account_id</span>.
+		</p>		
+		<h4>
+			Appels
+		</h4>
+		<p>		
+		La nature de l'appel est contenue dans l'url. Les paramètres sont passés au sein de la variable <span class="variable">data</span>, quelle que soit la méthode utilisée, qui a la forme suivante :
+		</p>
+		<pre>
+		{
+			input1 : {},[] or string of input variables (depending on the call),
+			input2 : {},[] or string of input variables (depending on the call),
+			input3 : {},[] or string of input variables (depending on the call),
+			....
+		}
+		</pre>
+		<p>
+		Le contenu de <span class="variable">data</span> est de fait un tableau associatif, dont les index sont des chaînes de caractère. Selon les langages, il s'agit d'un tableau ou d'un objet. 
+		Dans la suite, les paramètres feront référence aux champs de <span class="variable">data</span>. Avant d'être passée en paramètre par POST ou GET, la variable <span class="variable">data</span> doit être encodée au format JSON.
+		On pourra par exemple faire appel à JSON.stringify() en javascript ou json_encode() en PHP.
+		</p>
+		<h4>
+			Réponses
+		</h4>		
+		<p>
+		En cas de succès, la réponse http aux appels sera de type 200 et sera systématiquement au format json. Elle devra donc faire l'objet d'un décodage. Elle sera structurée, après décodage, de la manière suivante : 
+		<pre>
+		{
+			output1 : {},[] or string of input variables (depending on the call),
+			output2: {},[] or string of input variables (depending on the call),
+			....
+		}
+		</pre>		
+		En cas d'échec, la réponse http sera différente de 200, généralement de type 400 à 404, et un message d'erreur sera inclus dans le corps de la réponse.
+		</p>
+		<h4>
+			Référencement des documents
+		</h4>
+		<p>		
+		Chaque document d'un compte utilisateur est identifié par un identifiant unique. Les appels qui ciblent des documents doivent nécessairement référencer les identifiants d'un ou plusieurs documents. 
+		Ces identifiants sont transmis sous forme de valeurs d'un tableau, généralement stocké dans une variable intitulée <span class="variable">index</span>.
+		</p>		
+		<pre>
+			var index =  [id_doc_1,id_doc_2,...]; // javascript
+			$index = array(id_doc_1,id_doc2,...); // php
+		</pre>	
+		<h4>
+			Tags et chemins d'accès
+		</h4>
+		<p>		
+		La logique de classement de wagapi ne repose pas sur l'utilisation d'une arborescence hiérarchique mais fait appel à la caractérisation par mots clés ou tags. 
+		Chaque fois qu'il est question de la <span class="variable">path</span>, ou chemin d'accès, il s'agit en fait d'une liste de mots clés qui pourraient être assimilés à une succession de sous-répertoires.
+		Par exemple : 
+		<pre>path:[tags1,tags2,tags3]</pre>
+		correspond à un emplacement rassemblant les trois mots clés, ce qui dans une arborescence classique serait équivalent au chemin /tag1/tag2/tag3/, à la différence près, que l'ordre des tags n'a pas d'importance.
+		Ainsi les emplacements suivants sont équivalents, ce qui offre une très grande souplesse dans le classement de l'information.
+		<pre>[tags1,tags2,tags3] <=> [tags1,tags3,tags2] <=> [tags3,tags2,tags1] <=> ...</pre>
+		Le nom sous lequel est enregistré un document (sans son extension) constitue en lui-même un tag.
+		</p>	
+		<h4>		
+			Encodage des caractères
+		</h4>
+		<p>		
+		Toutes les chaînes de caractères transmises au serveur doivent être encodées en UTF8.
+		</p>				
+	</div>
+	<div class="main-title">
+		<h2>
+			Détail des appels de fonction disponibles
+		</h2>
+		<p>		
+		Des exemples en javascript et en PHP sont disponibles <a href="examples-v0.html">en cliquant ici</a>.
+		</p>		
+	</div>
+	
+
+<div class="main-box" id="calls">
+</div>
+<center>
+<SCRIPT TYPE="text/javascript"><!--
+//http://fr.jimdo.com/app/forum/tutoriels-astuces-f98/-tuto-afficher-la-date-de-mise-a-jour-de-votre-sit-t7253.html
+function scriptArray(){
+this.length = scriptArray.arguments.length
+for (var i = 0; i < this.length; i++)
+this[i+1] = scriptArray.arguments[i]}
+
+var WArray=new scriptArray("Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi");
+var YArray=new scriptArray("Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre");
+var LastModDate=new Date(document.lastModified);
+var updated=''+WArray[(LastModDate.getDay()+1)]+', '+LastModDate.getDate()+' '+YArray[(LastModDate.getMonth()+1)]+', '+(LastModDate.getYear()+1900)+''
+
+var modd = "" + LastModDate.getDate() + "/" + (LastModDate.getMonth()+ 1) + "/" + (LastModDate.getYear()+1900)
+//document.write('<font face="Verdana" size="1"> Mis à jour '+updated+'.<BR></font>');
+document.write('<font face="Verdana" size="1"><BR >Dernière mise à jour le '+modd+'</font>');
+// --></script>
+<center>	
+
+</body>
+
+<script type="text/x-tmpl" id="tmpl-call">
+{% for (var i=0; i<o.calls.length; i++) { %}
+	<section id="{%#o.calls[i].name%}">
+		<h3>{%=o.calls[i].name%}</h3>
+			<div class="row row-rest">
+				<div class="span1 muted">Description</div>
+				<div class="span8">{%#o.calls[i].description%}</div>	
+			</div>
+		
+			<div class="row row-rest"> 
+				<div class="span1 muted">Structure de l'URL</div>
+				<div class="span8"><pre>{%=o.calls[i].url%}</pre></div>	
+			</div>
+
+			<div class="row row-rest">
+				<div class="span1 muted">Méthodes</div>
+				<div class="span8">{%=o.calls[i].methods%}</div>	
+			</div>
+
+		{% if (o.calls[i].parameters && o.calls[i].parameters.length!=0) { %}
+			<div class="row row-rest">
+				<div class="span1 muted">Paramètres</div>
+				<div class="span8">
+					<div class="row row-rest">
+					{% for (var j=0; j<o.calls[i].parameters.length; j++) { %}
+						<div class="span1">{%#o.calls[i].parameters[j].name%}</div>
+						<div class="span1">{%#o.calls[i].parameters[j].type%}</div>				
+						<div class="span6">{%#o.calls[i].parameters[j].description%}</div>		
+					{% } %}	
+					</div>	
+				</div>	
+			</div>
+		{% } %}	
+		{% if (o.calls[i].results && o.calls[i].results.length!=0) { %}
+		<div class="row row-rest">
+			<div class="span1 muted">Renvoie</div>
+			<div class="span8"> 
+				<div class="row row-rest">
+				{% for (var k=0; k<o.calls[i].results.length; k++) { %}
+					<div class="span1">{%#o.calls[i].results[k].name%}</div>
+					<div class="span1">{%#o.calls[i].results[k].type%}</div>	
+					<div class="span6">{%#o.calls[i].results[k].description%}</div>
+				{% } %}	
+				</div>	
+			</div>	
+		</div>
+		{% } %}	
+		<div class="row row-rest">
+			<div class="span9">
+			{%#o.calls[i].result.description%}
+			</div>
+		</div>		
+	</section>
+	{% } %}	
+
+</script>	
+<script type="text/javascript">
+var data = {
+			calls:[
+					{	
+						name:"/access/account",
+						description:"Authentification et obtention d'un jeton de session",
+						url:"https://www.wagapi.com/wgp/api/access/account",
+						methods:"GET,POST",
+						version:"0",
+						parameters:[
+							{
+								name:"key",
+								type:"string",
+								description:"Clé d'accès à l'API de l'application"
+							},
+							{
+								name:"user",
+								type:"string",
+								description:"Identifiant du compte utilisateur"
+							},
+							{
+								name:"password",
+								type:"string",
+								description:"Mot de passe du compte utilisateur"
+							}
+						],						
+						results:[
+							{
+								name:"auth_validity",
+								type:"int",
+								description:"Durée de validité du jeton de session (en secondes)"
+							},
+							{
+								name:"auth_token",
+								type:"string",
+								description:"Jeton de sessions"
+							},
+							{
+								name:"account_id",
+								type:"string",
+								description:"Identifiant du compte"
+							},							
+						],
+						result:{
+							description :"Le jeton de session a normalement une durée de validité de 24h. Il est à inclure, de même que la clé, pour authentification dans tous les appels ultérieurs.",
+							format:"json"
+						}						
+					},
+					{	
+						name:"/access/upload",
+						description:"Obtention d'une adresse de dépôt temporaire",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/access/upload",
+						methods:"GET,POST",
+						version:"0",
+						parameters:[
+							{
+								name:"validity",
+								type:"int",
+								description:"Paramètre optionnel précisant la durée de validité de l'url en secondes (Par défaut 360 secondes, soit 5 minutes)"
+							}
+						],						
+						results:[
+							{
+								name:"path",
+								type:"string",
+								description:"Une url préformatée à solliciter pour le dépôt de documents reposant sur l'appel /upload"
+							},
+							{
+								name:"validity",
+								type:"int",
+								description:"Durée de validité de l'url"
+							}
+						],
+						result:{
+							description :"L'url peut être sollicitée plusieurs fois, y compris pour des envois simultanés, pendant sa durée de validité",
+							format:"json"
+						}						
+					},					
+					{	
+						name:"/upload (POST)",
+						description:    [	"Upload d'un ou plusieurs documents par méthode POST. ",
+											"L'appel à cette méthode nécessite d'avoir préalablement obtenu un accès temporaire en upload par la méthode /access/upload. ",
+											"Cet appel ne repose pas sur l'utilisation de la variable <span class='variable'>data</span>, mais uniquement sur la variable POST <span class='variable'>name</span>. ",
+											"Il est possible d'envoyer plusieurs documents avec un seul appel.",
+											"Le résultat est au format json."
+											].join('\n'),
+						url:"https://www.wagapi.com/wgp/api/<account_id>/upload",
+						methods:"POST",
+						version:"0",
+						parameters:[
+							{
+								name:"name",
+								type:"string",
+								description:"Il est impératif de renseigner la variable POST <span class='variable'>name</span> et de lui donner la valeur <span class='variable'>files[]</span>"
+							}
+						],
+						results:[
+							{
+								name:"id",
+								type:"string",
+								description:"Id du fichier ajouté. Sert pour toute désignation directe du fichiers lors d'appels ultérieurs à l'api."
+							},							
+							{
+								name:"name",
+								type:"string",
+								description:"Nom du fichier"
+							},
+							{
+								name:"size",
+								type:"string",
+								description:"Taille du fichier en octets"
+							},
+							{
+								name:"type",
+								type:"string",
+								description:"Type MIME"
+							},
+							{
+								name:"error",
+								type:"string",
+								description:"Si non-vide, indique le problème rencontré."
+							},
+							{
+								name:"checksum",
+								type:"string",
+								description:"md5 du fichier"
+							}
+						],
+						result:{
+							description :"Le résultat est un tableau contenant une entrée par fichier envoyé. Chaque entrée est un objet contenant les champs précédents.",
+							format:"json"
+						}						
+					},
+					{
+						name:"/upload (PUT)",
+						description:"Upload d'un document par méthode PUT. L'appel à cette méthode nécessite d'avoir préalablement obtenu un accès temporaire en upload par la méthode /access/upload",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/upload/<temporary_access>/<file_name[urlencoded]>",
+						methods:"PUT",
+						version:"0",
+						parameters:[
+							{
+								name:"temporary_access",
+								type:"string",
+								description:"Un utilisateur authentifié peut fournir son jeton de session comme nom de répertoire temporaire. Pour uploader un document sans faire appel au jeton de session, il faut avoir préalabement obtenu un accès temporaire en upload par la méthode /access/upload."
+							},
+							{
+								name:"file_name",
+								type:"string",
+								description:"<span class='variable'>file_name</span> correpond au nom complet du document avec son extension et doit faire l'objet d'un encodage d'url."
+							}
+						],
+						results:[
+							{
+								name:"id",
+								type:"string",
+								description:"Id du fichier ajouté. Sert pour toute désignation directe du fichiers lors d'appels ultérieurs à l'api."
+							},							
+							{
+								name:"name",
+								type:"string",
+								description:"Nom du fichier"
+							},
+							{
+								name:"size",
+								type:"string",
+								description:"Taille du fichier en octets"
+							},
+							{
+								name:"type",
+								type:"string",
+								description:"Type MIME (non-renseigné dans le cas de la méthode PUT)"
+							},
+							{
+								name:"error",
+								type:"string",
+								description:"Si non-vide, indique le problème rencontré."
+							},
+							{
+								name:"checksum",
+								type:"string",
+								description:"md5 du fichier"
+							}							
+						],
+						result:{
+							description :"Le résultat est un tableau contenant une entrée par fichier envoyé. Chaque entrée est un objet contenant les champs précédents.",
+							format:"json"
+						}						
+					},					
+					{	
+						name:"/delete/docs",
+						description:"Supprime définitivement les documents désignés",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/delete/docs",
+						methods:"POST",
+						version:"0",
+						parameters:[
+							{
+								name:"ids",
+								type:"array",
+								description:"Contient les identifiants <span class='variable'>id</span> des éléments à supprimer, sous forme d'entrée d'un tableau"
+							}
+						],
+						results:[
+							{
+								name:"quota_allowed",
+								type:"int",
+								description:"Espace total alloué en octets"
+							},
+							{
+								name:"quota_used",
+								type:"int",
+								description:"Espace utilisé en octets"
+							}							
+						],
+						result:{
+							description :"",
+							format:"json"
+						}						
+					},
+					{	
+						name:"/download/doc",
+						description:"Déclenche le téléchargement du fichier désigné par son id. Cette fonction exige le passage des paramètres directement dans l'url",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/download/doc/<auth_token>/<id>",
+						methods:"GET",
+						version:"0",
+						parameters:[
+							{
+								name:"id",
+								type:"string",
+								description:"Identifiant du document à télécharger"
+							},
+							{
+								name:"auth_token",
+								type:"string",
+								description:"Jeton d'authentification"
+							}							
+						],
+						results:[
+						],
+						result:{
+							description :"Le téléchargement du document désigné est initié avec un entête de type Content-type: application/octet-stream",
+							format:"Format du document sélectionné"
+						}						
+					},
+					{	
+						name:"/list/docs/from/path",
+						description:"Liste les documents référencés à l'emplacement sélectionné",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/list/docs/from/path",
+						methods:"GET",
+						version:"0",
+						parameters:[
+							{
+								name:"path",
+								type:"array",
+								description:"Tableau listant les tags constituant le chemin de l'emplacement"
+							}
+						],
+						results:[
+							{
+								name:"index",
+								type:"array",
+								description:"Liste des <span class='variable'>id</span> identifiant les documents"
+							},
+							{
+								name:"files",
+								type:"array",
+								description:"Liste de tableaux associatifs contenant les propriétés des documents listés dans <span class='variable'>index</span>, à savoir ['id'],['name'],['size'],['extension'],['date_in']"
+							}								
+						],
+						result:{
+							description :"",
+							format:"json"
+						}						
+					},/*
+					{	
+						name:"/list/tags",
+						description:"Liste de l'ensemble des tags rattachés aux documents sélectionnés",
+						url:"https://www.wagapi.com/wgp/delete/docs",
+						methods:"GET",
+						version:"0",
+						parameters:[
+							{
+								name:"ids",
+								type:"array",
+								description:"Liste des <span class='variable'>id</span> des documents"
+							}
+						],
+						results:[
+							{
+								name:"ids",
+								type:"array",
+								description:"Liste des tags"
+							}						
+						],
+						result:{
+							description :"",
+							format:"json"
+						}						
+					},*/
+					{	
+						name:"/link/docs",
+						description:"Crée un lien temporaire ou permanent vers chaque document listé accessible sans authentification",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/link/doc",
+						methods:"GET",
+						version:"0",
+						parameters:[
+							{
+								name:"index",
+								type:"array",
+								description:"Tableau listant les <span class='variable'>ids</span> des différents documents ciblés"
+							},
+							{
+								name:"validity",
+								type:"int",
+								description:"validité souhaitée en secondes [0 correspond à une durée de vie infinie]"
+							}							
+						],
+						results:[
+							{
+								name:"index",
+								type:"array",
+								description:"Tableau listant les <span class='variable'>ids</span> des différents documents ciblés"
+							},
+							{
+								name:"links",
+								type:"array",
+								description:"Tableau contenant le lien généré pour chaque document"
+							},
+							{
+								name:"collectionLink",
+								type:"string",
+								description:"Lien vers une page rassemblant l'ensemble des documents"
+							}							
+						],
+						result:{
+							description :"Les tableaux <span class='variable'>index</span> et <span class='variable'>links</span> sont ordonnés de la même manière",
+							format:"json"
+						}						
+					},	
+					{	
+						name:"/add/docs/to/path",
+						description:"Ajoute un ou plusieurs documents à l'emplacement désigné, chaque répertoire du chemin constituant un tag",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/add/docs/to/path",
+						methods:"GET, POST",
+						version:"0",
+						parameters:[
+							{
+								name:"index",
+								type:"array",
+								description:"Tableau listant les <span class='variable'>ids</span> des différents documents ciblés"
+							},
+							{
+								name:"path",
+								type:"array",
+								description:"Tableau listant les tags constituant le chemin de l'emplacement. Les tags sont insensibles à la casse."
+							}							
+						],
+						result:{
+							description :"",
+							format:"json"
+						}							
+					},	
+					{	
+						name:"/rem/docs/from/path",
+						description:"Enlève un ou plusieurs documents de l'emplacement désigné, chaque répertoire du chemin constituant un tag",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/rem/docs/from/path",
+						methods:"GET, POST",
+						version:"0",
+						parameters:[
+							{
+								name:"index",
+								type:"array",
+								description:"Tableau listant les <span class='variable'>ids</span> des différents documents ciblés"
+							},
+							{
+								name:"path",
+								type:"array",
+								description:"Tableau listant les tags constituant le chemin de l'emplacement. Les tags sont insensibles à la casse."
+							}							
+						],
+						result:{
+							description :"",
+							format:"json"
+						}							
+					},
+					{	
+						name:"/list/tags/from/path",
+						description:"Liste les répertoires/tags existant à l'emplacement désigné, chaque répertoire du chemin constituant un tag",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/list/tags/from/path",
+						methods:"GET, POST",
+						version:"0",
+						parameters:[
+							{
+								name:"path",
+								type:"array",
+								description:"Tableau listant les tags constituant le chemin de l'emplacement. Les tags sont insensibles à la casse."
+							}							
+						],						
+						results:[
+							{
+								name:"tags",
+								type:"array",
+								description:"Tableau listant les <span class='variable'>tags</span> référencés"
+							}						
+						],
+						result:{
+							description :"",
+							format:"json"
+						}							
+					},
+					{	
+						name:"/list/tags/all",
+						description:"Liste les répertoires/tags existant à l'emplacement désigné, chaque répertoire du chemin constituant un tag",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/list/tags/from/path",
+						methods:"GET, POST",
+						version:"0",						
+						results:[
+							{
+								name:"tags",
+								type:"array",
+								description:"Tableau listant les <span class='variable'>tags</span> référencés"
+							}						
+						],
+						result:{
+							description :"",
+							format:"json"
+						}							
+					},
+					{	
+						name:"/find/file",
+						description:"Permet de retrouver un document sur la base de son nom, sa taille et sa signature MD5 (checksum)",
+						url:"https://www.wagapi.com/wgp/api/<account_id>/find/file",
+						methods:"GET, POST",
+						version:"0.1",	
+						parameters:[						
+							{
+								name:"name",
+								type:"string",
+								description:"Nom du fichier"
+							},
+							{
+								name:"size",
+								type:"string",
+								description:"Taille du fichier en octets"
+							},
+							{
+								name:"checksum",
+								type:"string",
+								description:"md5 du fichier"
+							}
+						],						
+						results:[
+							{
+								name:"id",
+								type:"string",
+								description:"Id du fichier identifié correspondant"
+							},							
+							{
+								name:"name",
+								type:"string",
+								description:"Nom du fichier"
+							},
+							{
+								name:"size",
+								type:"string",
+								description:"Taille du fichier en octets"
+							},
+							{
+								name:"error",
+								type:"string",
+								description:"Si non-vide, indique le problème rencontré."
+							},
+							{
+								name:"checksum",
+								type:"string",
+								description:"md5 du fichier"
+							}					
+						],
+						result:{
+							description :"Les paramètres et le résultat, s'il y en a un, correspondent à des objets dont les champs sont décrits dessus et qui sont placés dans la variable <span class='variable'>data</span>",
+							format:"json"
+						}							
+					}/*,
+					{	
+						name:"/list/links",
+						description:"Liste les liens établis précédemment et toujours valides avec leurs cibles",
+						url:"https://www.wagapi.com/wgp/list/links",
+						methods:"GET, POST",
+						version:"0",						
+						results:[
+							{
+								name:"links",
+								type:"array",
+								description:"Tableau listant les liens ['links'], et l'[index] des documents référencés"
+							}						
+						],
+						result:{
+							description :"",
+							format:"json"
+						}							
+					}	*/				
+					
+				]
+									
+};
+
+
+//tmpl.cache["tmpl-call"] = null;
+document.getElementById("calls").innerHTML = tmpl("tmpl-call", data);
+</script>
+
+</html> 
